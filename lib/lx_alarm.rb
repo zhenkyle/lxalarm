@@ -30,11 +30,9 @@ class LXAlarm < FXMainWindow
     @switcher = FXSwitcher.new(self, :opts => LAYOUT_FILL)
     
     #Creating Welcome View
-    @welcome_view =WelcomeView.new(@switcher,"welcome.jpg")
+    @welcome_view =WelcomeView.new(@switcher)
     #Creating alarm view from @alarm
     @alarm_view = AlarmView.new(@switcher,@alarm)
-    puts @alarm_view.contentWindow.width
-    puts @alarm_view.contentWindow.height
 end
   
   
