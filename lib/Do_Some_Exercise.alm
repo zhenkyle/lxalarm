@@ -1,0 +1,15 @@
+--- !ruby/object:Alarm 
+name: Do Some Exercise
+time_periods: 
+- !ruby/object:TimePeriod 
+  length: 5
+  name: Warm Up
+- !ruby/object:TimePeriod 
+  length: 5
+  name: Leg Exercise
+- !ruby/object:TimePeriod 
+  length: 5
+  name: Body Exercise
+- !ruby/object:TimePeriod 
+  length: 10
+  name: Do Push Ups

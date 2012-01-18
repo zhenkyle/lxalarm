@@ -17,22 +17,17 @@ class LXAlarm < FXMainWindow
   def initialize(app)
     super(app,"LX's Alarm: An Alarm with time period settings", :width => 600, :height => 400)
     add_menu_bar
+    add_tool_bar
    
-    begin
-      @alarm = YAML.load_file("cook_a_cake.yml")
-    rescue
-      @alarm = Alarm.new("Cook a Cake")
-      @alarm << TimePeriod.new("Mix Flour", 20)
-      @alarm << TimePeriod.new("Shape the Cake", 10)
-      @alarm << TimePeriod.new("Roaste the Cake", 15)
-    end
-    
     @switcher = FXSwitcher.new(self, :opts => LAYOUT_FILL)
     
     #Creating Welcome View
     @welcome_view =WelcomeView.new(@switcher)
-    #Creating alarm view from @alarm
-    @alarm_view = AlarmView.new(@switcher,@alarm)
+    
+    #for test
+    @alarm = YAML.load_file("cook_a_cake.alm")
+    AlarmView.new(@switcher,@alarm)
+    @switcher.setCurrent 1
 end
   
   
@@ -67,13 +62,27 @@ end
     end
 
   end
+
+  def add_tool_bar
+
+  end
   
   def create
     super
     show(PLACEMENT_SCREEN)
   end
   
-  def open_alarm_file
+  def open_alarm_file(filepath)
+    if @switcher.children.length >1
+      @switcher.removeChild(@switcher.childAtIndex(1))
+    end
+    @alarm = YAML.load_file(filepath)
+    #Creating alarm view from @alarm
+#    AlarmView.new(@switcher,@alarm)
+    @switcher.create
+    @switcher.recalc
+#    @switcher.setCurrent 1
+#    @switcher.create
   end
   
   def store_alarm_file

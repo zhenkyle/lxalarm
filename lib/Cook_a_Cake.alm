@@ -1,0 +1,12 @@
+--- !ruby/object:Alarm 
+name: Cook a Cake
+time_periods: 
+- !ruby/object:TimePeriod 
+  length: 20
+  name: Mix Flour
+- !ruby/object:TimePeriod 
+  length: 10
+  name: Shape the Cake
+- !ruby/object:TimePeriod 
+  length: 15
+  name: Roaste the Cake
