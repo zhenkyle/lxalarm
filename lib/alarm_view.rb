@@ -1,4 +1,4 @@
-require 'time_period_view'
+require 'step_view'
 
 class AlarmView < FXScrollWindow
   
@@ -8,10 +8,10 @@ class AlarmView < FXScrollWindow
     super(p, :opts=>LAYOUT_FILL)
     @alarm = alarm
     FXVerticalFrame.new(self, :opts=>LAYOUT_FILL)
-    @alarm.each {|time_period| add_time_period(time_period) }
+    @alarm.each {|step| add_step(step) }
   end
   
-  def add_time_period(time_period)
-    TimePeriodView.new(contentWindow, time_period)
+  def add_step(step)
+    StepView.new(contentWindow, step)
   end
 end

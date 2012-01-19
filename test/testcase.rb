@@ -2,7 +2,7 @@ require File.join(File.dirname(__FILE__),"testhelper")
 require 'test/unit'
 require 'fox16'
 require 'ext_integer'
-require 'time_period'
+require 'step'
 require 'alarm'
 require 'yaml'
 

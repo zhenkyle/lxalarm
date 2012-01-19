@@ -1,12 +1,12 @@
 --- !ruby/object:Alarm 
 name: Cook a Cake
-time_periods: 
-- !ruby/object:TimePeriod 
+steps: 
+- !ruby/object:Step 
   length: 20
   name: Mix Flour
-- !ruby/object:TimePeriod 
+- !ruby/object:Step 
   length: 10
   name: Shape the Cake
-- !ruby/object:TimePeriod 
+- !ruby/object:Step 
   length: 15
   name: Roaste the Cake

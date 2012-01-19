@@ -5,26 +5,26 @@ class Alarm
   include Enumerable
   
   attr_accessor :name
-  attr_reader :time_periods
+  attr_reader :steps
 
   def initialize(name)
     @name = name
-    @time_periods = []
+    @steps = []
   end
   
-  def <<(other)
-    @time_periods << other
+  def <<(step)
+    @steps << step
   end
-  def [](other)
-    @time_periods[other]
+  def [](step)
+    @steps[step]
   end
   
   def each(&block)
-    @time_periods.each(&block)
+    @steps.each(&block)
   end
   
   def swap(a,b)
-    @time_periods[a],@time_periods[b] = @time_periods[b],@time_periods[a]
+    @steps[a],@steps[b] = @steps[b],@steps[a]
   end
   
 end

@@ -3,19 +3,19 @@ include Fox
 
 # require basics
 require 'ext_integer'
-require 'time_period'
+require 'step'
 require 'alarm'
 require 'yaml'
 
 # require views
-require 'time_period_view'
+require 'step_view'
 require 'alarm_view'
 require 'welcome_view'
 
 
 class LXAlarm < FXMainWindow
   def initialize(app)
-    super(app,"LX's Alarm: An Alarm with time period settings", :width => 600, :height => 400)
+    super(app,"LX's Alarm: An Alarm with step settings", :width => 600, :height => 400)
     add_menu_bar
     add_tool_bar
    

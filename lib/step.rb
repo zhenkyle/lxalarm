@@ -1,4 +1,4 @@
-class TimePeriod
+class Step
 
   attr_accessor :name,:length
   def initialize(name,length)
