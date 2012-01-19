@@ -58,6 +58,7 @@ end
 
     exit_cmd.connect(SEL_COMMAND) do
       store_alarm_file
+      clean_up(self)
       exit
     end
 
@@ -86,6 +87,13 @@ end
   end
   
   def store_alarm_file
+  end
+
+  def clean_up(component)
+    component.children.each do |child|
+      clean_up(child)
+      component.removeChild(child)
+    end
   end
 end
 
