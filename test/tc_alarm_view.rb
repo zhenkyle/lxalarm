@@ -10,13 +10,13 @@ class TC_AlarmView < TestCase
   def setup
     super("TC_AlarmView")
     @alarm = Alarm.new("Cook a Cake")
-    @alarm << Step.new("Mix Flour", 20)
-    @alarm << Step.new("Shape the Cake", 10)
-    @alarm << Step.new("Roaste the Cake", 15)
+    @alarm << Step.new("Mix Flour", 20*60)
+    @alarm << Step.new("Shape the Cake", 10*60)
+    @alarm << Step.new("Roaste the Cake", 15*60)
     @alarm_view = AlarmView.new(mainWindow,@alarm)
   end
   
   def test_scrollable
-    assert @alarm_view.methods.include?("setPosition")
+    assert @alarm_view.methods.include?(:setPosition)
   end
 end

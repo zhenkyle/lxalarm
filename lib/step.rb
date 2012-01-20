@@ -1,8 +1,8 @@
 class Step
 
-  attr_accessor :name,:length
-  def initialize(name,length)
+  attr_accessor :name,:duration
+  def initialize(name,duration)
     @name = name
-    @length = length
+    @duration = duration
   end
 end

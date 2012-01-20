@@ -5,7 +5,6 @@ class Alarm
   include Enumerable
   
   attr_accessor :name
-  attr_reader :steps
 
   def initialize(name)
     @name = name
@@ -23,8 +22,9 @@ class Alarm
     @steps.each(&block)
   end
   
-  def swap(a,b)
-    @steps[a],@steps[b] = @steps[b],@steps[a]
+  def duration
+    duration = 0
+    @steps.each {|step| duration +=step.duration}
+    duration
   end
-  
 end

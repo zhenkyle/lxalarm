@@ -2,11 +2,11 @@
 name: Cook a Cake
 steps: 
 - !ruby/object:Step 
-  length: 20
+  duration: 1200
   name: Mix Flour
 - !ruby/object:Step 
-  length: 10
+  duration: 600
   name: Shape the Cake
 - !ruby/object:Step 
-  length: 15
+  duration: 900
   name: Roaste the Cake

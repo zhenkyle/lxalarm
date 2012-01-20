@@ -2,14 +2,14 @@
 name: Do Some Exercise
 steps: 
 - !ruby/object:Step 
-  length: 5
+  duration: 300
   name: Warm Up
 - !ruby/object:Step 
-  length: 5
+  duration: 300
   name: Leg Exercise
 - !ruby/object:Step 
-  length: 5
+  duration: 300 
   name: Body Exercise
 - !ruby/object:Step 
-  length: 10
+  duration: 600
   name: Do Push Ups

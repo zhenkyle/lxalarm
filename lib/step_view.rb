@@ -8,6 +8,6 @@ class StepView < FXLabel
     load_step(step)
   end
   def load_step(step)
-    self.text = "%s %s" % [step.length.to_minute,step.name]
+    self.text = "%s %s" % [step.duration.to_second,step.name]
   end
 end
