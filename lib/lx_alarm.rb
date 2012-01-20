@@ -14,6 +14,10 @@ require 'welcome_view'
 
 
 class LXAlarm < FXMainWindow
+  
+  # How often our timer will fire (in milliseconds)
+  TIMER_INTERVAL = 1000
+  
   def initialize(app)
     super(app,"LX's Alarm: An Alarm with step settings", :width => 600, :height => 400)
     add_menu_bar
@@ -33,6 +37,8 @@ end
   
   def add_menu_bar
     menu_bar = FXMenuBar.new(self, LAYOUT_SIDE_TOP|LAYOUT_FILL_X)
+    
+    # File Menu
     file_menu = FXMenuPane.new(self)
     FXMenuTitle.new(menu_bar, "File", :popupMenu => file_menu)
     open_cmd = FXMenuCommand.new(file_menu, "Open...")
@@ -61,7 +67,34 @@ end
       clean_up(self)
       exit
     end
+    # Alarm Menu
+    alarm_menu = FXMenuPane.new(self)
+    FXMenuTitle.new(menu_bar, "Alarm", :popupMenu => alarm_menu)
+    start_cmd = FXMenuCommand.new(alarm_menu, "Start")
+    start_cmd.connect(SEL_COMMAND) do
+      @countingdown = true
+      @timer = getApp().addTimeout(TIMER_INTERVAL, :repeat => true) do
+        puts "hahaha"
+      end
+    end
+    start_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
+      @countingdown ? sender.disable : sender.enable
+    end
+    stop_cmd = FXMenuCommand.new(alarm_menu, "Stop")
+    stop_cmd.connect(SEL_COMMAND) do
+      @countingdown = false
+      if @timer
+        getApp().removeTimeout(@timer)
+        @timer = nil
+      end
+    end
+    stop_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
+      @countingdown ? sender.enable : sender.disable
+    end
 
+    # Initialize private variables
+    @countingdown = false
+    @timer = nil
   end
 
   def add_tool_bar
@@ -100,9 +133,6 @@ end
 if __FILE__ == $0
   FXApp.new do |app|
     LXAlarm.new(app)
-#    app.addTimeout(1*1000, :repeat => true) do
-#      puts "hahaha"
-#    end
     app.create
     app.run
   end
