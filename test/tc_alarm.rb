@@ -32,4 +32,12 @@ class TC_Alarm < Test::Unit::TestCase
   def test_get_duration
     assert_equal @t1.duration + @t2.duration + @t3.duration, @alarm.duration
   end
+
+  def test_countdown
+    duration = @alarm.duration
+    new_duration = @alarm.countdown
+    new_duration = @alarm.countdown
+    assert_equal duration-2, @alarm.duration
+    assert_equal duration-2, new_duration
+  end
 end

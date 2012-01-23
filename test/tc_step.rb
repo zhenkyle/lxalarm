@@ -16,4 +16,11 @@ class TC_Step < Test::Unit::TestCase
     assert_equal "Changed", @step.name
     assert_equal 10*60, @step.duration
   end
+  def test_countdown
+    duration = @step.duration
+    new_duration = @step.countdown
+    new_duration = @step.countdown
+    assert_equal duration-2, @step.duration
+    assert_equal duration-2, new_duration
+  end
 end

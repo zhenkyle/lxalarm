@@ -27,4 +27,10 @@ class Alarm
     @steps.each {|step| duration +=step.duration}
     duration
   end
+
+  def countdown
+    step = @steps.find {|x| x.duration >0 }
+    step.countdown if step != nil
+    duration
+  end
 end
