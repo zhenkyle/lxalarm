@@ -23,4 +23,8 @@ class TC_Step < Test::Unit::TestCase
     assert_equal duration-2, @step.duration
     assert_equal duration-2, new_duration
   end
+  def test_observable
+    assert_respond_to(@step,:notify_observers)
+    assert_respond_to(@step,:changed)
+  end
 end

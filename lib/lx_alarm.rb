@@ -73,21 +73,13 @@ end
     start_cmd = FXMenuCommand.new(alarm_menu, "Start")
     start_cmd.connect(SEL_COMMAND) do
       @countingdown = true
-      @timer = getApp().addTimeout(TIMER_INTERVAL, :repeat => true) do
-        puts "hahaha"
-      end
+      getApp().addTimeout(TIMER_INTERVAL, method(:onTimeout))
     end
     start_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
       @countingdown ? sender.disable : sender.enable
     end
     stop_cmd = FXMenuCommand.new(alarm_menu, "Stop")
-    stop_cmd.connect(SEL_COMMAND) do
-      @countingdown = false
-      if @timer
-        getApp().removeTimeout(@timer)
-        @timer = nil
-      end
-    end
+    stop_cmd.connect(SEL_COMMAND, method(:onCmdStopTimer))
     stop_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
       @countingdown ? sender.enable : sender.disable
     end
@@ -127,6 +119,23 @@ end
       clean_up(child)
       component.removeChild(child)
     end
+    getApp().removeTimeouts()
+  end
+
+  def onCmdStopTimer(sender, sel, ptr)
+    @countingdown = false
+    if getApp().hasTimeout?(@timer)
+      getApp().removeTimeout(@timer)
+      @timer = nil
+    end
+  end
+  def onTimeout(sender, sel, ptr)
+   i = @alarm.countdown
+   puts i
+   if i != 0
+     @timer = getApp().addTimeout(TIMER_INTERVAL, method(:onTimeout))
+     @countingdown = false
+   end
   end
 end
 

@@ -1,4 +1,7 @@
+require 'observer'
+
 class Step
+  include Observable
 
   attr_accessor :name,:duration
   def initialize(name,duration)
@@ -7,7 +10,11 @@ class Step
   end
   
   def countdown
-    @duration -= 1 if @duration > 0
+    if @duration > 0
+      @duration -= 1
+      changed
+      notify_observers(self)
+    end
     @duration
   end
 end
