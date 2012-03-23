@@ -20,9 +20,17 @@ class LXAlarm < FXMainWindow
   
   def initialize(app)
     super(app,"LX's Alarm: An Alarm with step settings", :width => 650, :height => 450)
+    # Make all menu
     add_menu_bar
+
+    # Make all tool bar
     add_tool_bar
-    add_status_bar
+
+    # Make a status bar
+    FXStatusBar.new(self, :opts => LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X)
+
+    # Make a tool tip
+    FXToolTip.new(app)
    
     @switcher = FXSwitcher.new(self, :opts => LAYOUT_FILL)
     
@@ -37,7 +45,7 @@ class LXAlarm < FXMainWindow
     #@alarm = YAML.load_file("cook_a_cake.alm")
     #AlarmView.new(@switcher,@alarm)
     #@switcher.setCurrent 1
-end
+  end
   
   
   def add_menu_bar
@@ -48,25 +56,12 @@ end
     FXMenuTitle.new(menu_bar, "File", :popupMenu => file_menu)
 
     # File Menu -- New
-    new_alarm_command = FXMenuCommand.new(file_menu, "New")
-    new_alarm_command.connect(SEL_COMMAND) do
-      alarm_title =
-        FXInputDialog.getString("My Alarm", self, "New Alarm", "Name:")
-      if alarm_title
-        @alarm = Alarm.new(alarm_title)
-      end
-    end
+    new_alarm_cmd = FXMenuCommand.new(file_menu, "New")
+    new_alarm_cmd.connect(SEL_COMMAND, method(:on_cmd_file_new))
 
     # File Menu -- Open...
     open_cmd = FXMenuCommand.new(file_menu, "Open...")
-    open_cmd.connect(SEL_COMMAND) do
-      dialog = FXFileDialog.new(self, "Open an Alarm")
-      dialog.selectMode = SELECTFILE_EXISTING
-      dialog.patternList = ["Alarm Files (*.alm)"]
-      if dialog.execute != 0
-        open_alarm_file(dialog.filename)
-      end
-    end
+    open_cmd.connect(SEL_COMMAND, method(:on_cmd_file_open)) 
 
     # File Menu -- Seperator
     FXMenuSeparator.new(file_menu)
@@ -75,17 +70,13 @@ end
     save_cmd = FXMenuCommand.new(file_menu, "Save")
     save_cmd.connect(SEL_COMMAND) do
     end
-    save_cmd.connect(SEL_UPDATE) do |sender, sel, data|
-      sender.enabled = (! @alarm.nil?) && @alarm_dirty
-    end
+    save_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
 
     # File Menu -- Save As ...
     save_as_cmd = FXMenuCommand.new(file_menu, "Save As ...")
     save_as_cmd.connect(SEL_COMMAND) do
     end
-    save_as_cmd.connect(SEL_UPDATE) do |sender, sel, data|
-      sender.enabled = (! @alarm.nil?) && @alarm_dirty
-    end
+    save_as_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
 
     # File Menu -- Seperator
     FXMenuSeparator.new(file_menu)
@@ -94,17 +85,11 @@ end
     close_cmd = FXMenuCommand.new(file_menu, "Close")
     close_cmd.connect(SEL_COMMAND) do
     end
-    close_cmd.connect(SEL_UPDATE) do |sender, sel, data|
-      sender.enabled = ! @alarm.nil?
-    end
+    close_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
 
     # File Menu -- Exit
     exit_cmd = FXMenuCommand.new(file_menu, "Exit")
-    exit_cmd.connect(SEL_COMMAND) do
-      store_alarm_file
-      clean_up(self)
-      exit
-    end
+    exit_cmd.connect(SEL_COMMAND, method(:on_cmd_file_exit))
 
     # Edit Menu
     edit_menu = FXMenuPane.new(self)
@@ -114,9 +99,7 @@ end
     edit_alarm_cmd = FXMenuCommand.new(edit_menu, "Edit Alarm")
     edit_alarm_cmd.connect(SEL_COMMAND) do
     end
-    edit_alarm_cmd.connect(SEL_UPDATE) do |sender, sel, data|
-      sender.enabled = !@alarm.nil?
-    end
+    edit_alarm_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
 
     # Edit Menu -- Seperator
     FXMenuSeparator.new(edit_menu)
@@ -146,10 +129,7 @@ end
 
     # Control Menu -- Start
     start_cmd = FXMenuCommand.new(control_menu, "Start")
-    start_cmd.connect(SEL_COMMAND) do
-      @counting_down = true
-      getApp().addTimeout(TIMER_INTERVAL, method(:onTimeout))
-    end
+    start_cmd.connect(SEL_COMMAND, method(:on_cmd_control_start))
     start_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
       if @alarm.nil?
         sender.disable
@@ -160,14 +140,8 @@ end
 
     # Control Menu -- Stop
     stop_cmd = FXMenuCommand.new(control_menu, "Stop")
-    stop_cmd.connect(SEL_COMMAND, method(:onCmdStopTimer))
-    stop_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
-      if @alarm.nil?
-        sender.disable
-      else
-        @counting_down ? sender.enable : sender.disable
-      end
-    end
+    stop_cmd.connect(SEL_COMMAND, method(:on_cmd_control_stop))
+    stop_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_running))
 
     # Control Menu -- Seperator
     FXMenuSeparator.new(control_menu)
@@ -176,38 +150,19 @@ end
     previous_cmd = FXMenuCommand.new(control_menu, "Previous Step")
     previous_cmd.connect(SEL_COMMAND) do
     end
-    previous_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
-      if @alarm.nil?
-        sender.disable
-      else
-        !@counting_down ? sender.disable : sender.enable
-      end
-    end
+    previous_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_running))
 
     # Control Menu -- Pause
     pause_cmd = FXMenuCommand.new(control_menu, "Pause")
     pause_cmd.connect(SEL_COMMAND) do
     end
-    pause_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
-      if @alarm.nil?
-        sender.disable
-      else
-        !@counting_down ? sender.disable : sender.enable
-      end
-    end
+    pause_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_running))
 
     # Control Menu -- Next Step
     next_cmd = FXMenuCommand.new(control_menu, "Next Step")
     next_cmd.connect(SEL_COMMAND) do
     end
-    next_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
-      if @alarm.nil?
-        sender.disable
-      else
-        !@counting_down ? sender.disable : sender.enable
-      end
-    end
-
+    next_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_running))
 
     # Help Menu
     help_menu = FXMenuPane.new(self)
@@ -220,9 +175,7 @@ end
 
     # Help Menu -- About
     about_cmd = FXMenuCommand.new(help_menu, "About LX's Alarm")
-    about_cmd.connect(SEL_COMMAND) do
-    end
-
+    about_cmd.connect(SEL_COMMAND, method(:on_cmd_help_about))
   end
 
   def add_tool_bar
@@ -260,9 +213,11 @@ end
     new_button = FXButton.new(tool_bar,
       "\tNew\tCreate new alarm.",
       :icon => new_icon)
+    new_button.connect(SEL_COMMAND, method(:on_cmd_file_new))
     open_button = FXButton.new(tool_bar,
       "\tOpen ...\tOpen an alarm from file.",
       :icon => open_icon)
+    open_button.connect(SEL_COMMAND, method(:on_cmd_file_open))
     save_button = FXButton.new(tool_bar,
       "\tSave\tSave alarm.",
       :icon => save_icon)
@@ -278,6 +233,7 @@ end
     exit_button = FXButton.new(tool_bar,
       "\tExit\tExit the program.",
       :icon => exit_icon)
+    exit_button.connect(SEL_COMMAND, method(:on_cmd_file_exit))
 
     # Edit Toolbar
     FXFrame.new(tool_bar,
@@ -308,6 +264,7 @@ end
     start_button = FXButton.new(tool_bar,
       "\tStart\tStart running alarm.",
       :icon => start_icon)
+    start_button.connect(SEL_COMMAND, method(:on_cmd_control_start))
     start_button.connect(SEL_UPDATE) do |sender, sel, ptr|
       if @alarm.nil?
         sender.disable
@@ -328,6 +285,7 @@ end
     stop_button = FXButton.new(tool_bar,
       "\tStop\tStop running alarm.",
       :icon => stop_icon)
+    stop_button.connect(SEL_COMMAND, method(:on_cmd_control_stop))
     stop_button.connect(SEL_UPDATE) do |sender, sel, ptr|
       if @alarm.nil?
         sender.disable
@@ -345,31 +303,88 @@ end
     about_button = FXButton.new(tool_bar,
       "\tAbout\tAbout LX's Alarm.",
       :icon => about_icon)
+    about_button.connect(SEL_COMMAND, method(:on_cmd_help_about))
   end
 
-  def add_status_bar
-    FXStatusBar.new(self, :opts => LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X)
-    FXToolTip.new(app)
-  end
 
+  # A function to load png icons
   def load_icon(filename)
-    begin
-      icon = nil
-      filename = File.join("icons",filename)
-      File.open(filename, "rb") do |io|
-        icon = FXPNGIcon.new(app, io.read)
-      end
-      icon
-    rescue
-      raise RuntimeError, "Couldn't load icon: #{filename}"
+    icon = nil
+    filename = File.join("icons",filename)
+    File.open(filename, "rb") do |io|
+      icon = FXPNGIcon.new(app, io.read)
     end
+    icon.blend(FXRGB(236,233,216))
+    icon
   end
 
+  # Create and show the main window
   def create
     super
     show(PLACEMENT_SCREEN)
   end
+
+  # Menu / Button command events
+  def on_cmd_file_new(sender,selector,data)
+    alarm_title =
+      FXInputDialog.getString("My Alarm", self, "New Alarm", "Name:")
+    if alarm_title
+      @alarm = Alarm.new(alarm_title)
+    end
+  end
+
+  def on_cmd_file_open(sender,selector,data)
+    dialog = FXFileDialog.new(self, "Open an Alarm")
+    dialog.selectMode = SELECTFILE_EXISTING
+    dialog.patternList = ["Alarm Files (*.alm)"]
+    if dialog.execute != 0
+      open_alarm_file(dialog.filename)
+    end
+  end
+
+  def on_cmd_file_exit(sender,selector,data)
+    store_alarm_file
+    clean_up(self)
+    exit
+  end
   
+  def on_cmd_control_start(sender,selector,data)
+    @counting_down = true
+    getApp().addTimeout(TIMER_INTERVAL, method(:on_timeout))
+  end
+
+  def on_cmd_control_stop(sender,selector,data)
+    @counting_down = false
+    if getApp().hasTimeout?(@timer)
+      getApp().removeTimeout(@timer)
+      @timer = nil
+    end
+  end
+
+  def on_cmd_help_about(sender,selector,data)
+    FXMessageBox.information(self, MBOX_OK, "About LX's Alarm",
+      "LX's Alarm.\nCopyright (C) 2012 Zhen Ke")
+  end
+
+  # Menu / Button update events
+  def on_upd_alarm_open(sender,selector,data)
+    sender.enabled = ! @alarm.nil?
+  end
+
+  def on_upd_alarm_dirty(sender,selector,data)
+    sender.enabled = (!@alarm.nil?) && @alarm_dirty
+  end
+
+  def on_upd_alarm_running(sender,selector,data)
+    if @alarm.nil?
+      sender.disable
+    else
+      @counting_down ? sender.enable : sender.disable
+    end
+  end
+
+
+  # Working Fuctions
   def open_alarm_file(filepath)
     if @switcher.children.length >1
       @switcher.removeChild(@switcher.childAtIndex(1))
@@ -384,6 +399,7 @@ end
   end
   
   def store_alarm_file
+    # TODO
   end
 
   def clean_up(component)
@@ -391,17 +407,11 @@ end
       clean_up(child)
       component.removeChild(child)
     end
+    #TODO
     #getApp().removeTimeouts()
   end
 
-  def onCmdStopTimer(sender, sel, ptr)
-    @counting_down = false
-    if getApp().hasTimeout?(@timer)
-      getApp().removeTimeout(@timer)
-      @timer = nil
-    end
-  end
-  def onTimeout(sender, sel, ptr)
+  def on_timeout(sender, sel, ptr)
    i = @alarm.countdown
    puts i
    if i != 0
@@ -409,6 +419,7 @@ end
      @counting_down = false
    end
   end
+
 end
 
 if __FILE__ == $0
