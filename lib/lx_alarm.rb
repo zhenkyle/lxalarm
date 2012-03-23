@@ -19,9 +19,10 @@ class LXAlarm < FXMainWindow
   TIMER_INTERVAL = 1000
   
   def initialize(app)
-    super(app,"LX's Alarm: An Alarm with step settings", :width => 600, :height => 400)
+    super(app,"LX's Alarm: An Alarm with step settings", :width => 650, :height => 450)
     add_menu_bar
     add_tool_bar
+    add_status_bar
    
     @switcher = FXSwitcher.new(self, :opts => LAYOUT_FILL)
     
@@ -109,12 +110,26 @@ end
     preferences_cmd.connect(SEL_COMMAND) do
     end
 
-    # Alarm Menu
-    alarm_menu = FXMenuPane.new(self)
-    FXMenuTitle.new(menu_bar, "Alarm", :popupMenu => alarm_menu)
+    # View Menu
+    view_menu = FXMenuPane.new(self)
+    FXMenuTitle.new(menu_bar, "View", :popupMenu => view_menu)
 
-    # Alarm Menu -- Start
-    start_cmd = FXMenuCommand.new(alarm_menu, "Start")
+    # View Menu -- Toolbar
+    view_toolbar_cmd = FXMenuCommand.new(view_menu, "Tool bar")
+    view_toolbar_cmd.connect(SEL_COMMAND) do
+    end
+
+    # View Menu -- Statusbar
+    view_statusbar_cmd = FXMenuCommand.new(view_menu, "Status bar")
+    view_statusbar_cmd.connect(SEL_COMMAND) do
+    end
+
+    # Control Menu
+    control_menu = FXMenuPane.new(self)
+    FXMenuTitle.new(menu_bar, "Control", :popupMenu => control_menu)
+
+    # Control Menu -- Start
+    start_cmd = FXMenuCommand.new(control_menu, "Start")
     start_cmd.connect(SEL_COMMAND) do
       @countingdown = true
       getApp().addTimeout(TIMER_INTERVAL, method(:onTimeout))
@@ -123,29 +138,29 @@ end
       @countingdown ? sender.disable : sender.enable
     end
 
-    # Alarm Menu -- Stop
-    stop_cmd = FXMenuCommand.new(alarm_menu, "Stop")
+    # Control Menu -- Stop
+    stop_cmd = FXMenuCommand.new(control_menu, "Stop")
     stop_cmd.connect(SEL_COMMAND, method(:onCmdStopTimer))
     stop_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
       @countingdown ? sender.enable : sender.disable
     end
 
-    # Alarm Menu -- Seperator
-    FXMenuSeparator.new(alarm_menu)
+    # Control Menu -- Seperator
+    FXMenuSeparator.new(control_menu)
 
-    # Alarm Menu -- Next Step
-    next_cmd = FXMenuCommand.new(alarm_menu, "Next Step")
-    next_cmd.connect(SEL_COMMAND) do
+    # Control Menu -- Previous Step
+    previous_cmd = FXMenuCommand.new(control_menu, "Previous Step")
+    previous_cmd.connect(SEL_COMMAND) do
     end
 
-    # Alarm Menu -- Pause
-    pause_cmd = FXMenuCommand.new(alarm_menu, "Pause")
+    # Control Menu -- Pause
+    pause_cmd = FXMenuCommand.new(control_menu, "Pause")
     pause_cmd.connect(SEL_COMMAND) do
     end
 
-    # Alarm Menu -- Previous Step
-    previous_cmd = FXMenuCommand.new(alarm_menu, "Previous Step")
-    previous_cmd.connect(SEL_COMMAND) do
+    # Control Menu -- Next Step
+    next_cmd = FXMenuCommand.new(control_menu, "Next Step")
+    next_cmd.connect(SEL_COMMAND) do
     end
 
 
@@ -169,9 +184,108 @@ end
   end
 
   def add_tool_bar
+    tool_bar_shell = FXToolBarShell.new(self)
 
+
+    top_dock_site = FXDockSite.new(self,
+      :opts => LAYOUT_FILL_X|LAYOUT_SIDE_TOP)
+    bottom_dock_site = FXDockSite.new(self,
+      :opts => LAYOUT_FILL_X|LAYOUT_SIDE_BOTTOM)
+
+    tool_bar = FXToolBar.new(top_dock_site, tool_bar_shell,
+      :opts => PACK_UNIFORM_WIDTH|FRAME_RAISED|LAYOUT_FILL_X)
+
+    FXToolBarGrip.new(tool_bar,
+      :target => tool_bar, :selector => FXToolBar::ID_TOOLBARGRIP,
+      :opts => TOOLBARGRIP_DOUBLE)
+
+    new_icon = load_icon("new-doc-icon.png")
+    open_icon = load_icon("open-alt-icon.png")
+    save_icon = load_icon("save-icon.png")
+    save_as_icon = load_icon("install-icon.png")
+    exit_icon = load_icon("exit-icon.png")
+    edit_alarm_icon = load_icon("notebook-icon.png")
+    preferences_icon = load_icon("advanced-icon.png")
+    start_icon = load_icon("play-icon.png")
+    stop_icon = load_icon("stop-alt-icon.png")
+    previous_icon = load_icon("rewind-button-icon.png")
+    pause_icon = load_icon("pause-icon.png")
+    next_icon = load_icon("forward-button-icon.png")
+    help_icon = load_icon("help-icon.png")
+    about_icon = load_icon("info-icon.png")
+
+    # File Toolbar
+    new_button = FXButton.new(tool_bar,
+      "\tNew\tCreate new alarm.",
+      :icon => new_icon)
+    open_button = FXButton.new(tool_bar,
+      "\tOpen ...\tOpen an alarm from file.",
+      :icon => open_icon)
+    save_button = FXButton.new(tool_bar,
+      "\tSave\tSave alarm.",
+      :icon => save_icon)
+    save_as_button = FXButton.new(tool_bar,
+      "\tSave As ...\tSave alarm to a new file.",
+      :icon => save_as_icon)
+    exit_button = FXButton.new(tool_bar,
+      "\tExit\tExit the program.",
+      :icon => exit_icon)
+
+    # Edit Toolbar
+    FXFrame.new(tool_bar,
+      LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT, :width => 8)
+    edit_alarm_button = FXButton.new(tool_bar,
+      "\tEdit\tEdit alarm.",
+      :icon => edit_alarm_icon)
+    preferences_button = FXButton.new(tool_bar,
+      "\tPreferences ...\tEdit system preferences.",
+      :icon => preferences_icon)
+
+    # Control Toolbar
+    FXFrame.new(tool_bar,
+      LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT, :width => 8)
+    previous_button = FXButton.new(tool_bar,
+      "\tPrevious Step\tGoto previous step.",
+      :icon => previous_icon)
+    start_button = FXButton.new(tool_bar,
+      "\tStart\tStart running alarm.",
+      :icon => start_icon)
+    next_button = FXButton.new(tool_bar,
+      "\tNext Step\tGoto next step.",
+      :icon => next_icon)
+    stop_button = FXButton.new(tool_bar,
+      "\tStop\tStop running alarm.",
+      :icon => stop_icon)
+
+    # Help Toolbar
+    FXFrame.new(tool_bar,
+      LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT, :width => 8)
+    previous_button = FXButton.new(tool_bar,
+      "\tHelp\tGet help.",
+      :icon => help_icon)
+    about_button = FXButton.new(tool_bar,
+      "\tAbout\tAbout LX's Alarm.",
+      :icon => about_icon)
   end
-  
+
+  def add_status_bar
+    FXStatusBar.new(self, :opts => LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X)
+    FXToolTip.new(app)
+  end
+
+  def load_icon(filename)
+    begin
+      icon = nil
+      filename = File.join("icons",filename)
+      File.open(filename, "rb") do |io|
+        icon = FXPNGIcon.new(app, io.read)
+      end
+      icon
+    rescue
+      raise RuntimeError, "Couldn't load icon: #{filename}"
+    end
+  end
+
   def create
     super
     show(PLACEMENT_SCREEN)
@@ -198,7 +312,7 @@ end
       clean_up(child)
       component.removeChild(child)
     end
-    getApp().removeTimeouts()
+    #getApp().removeTimeouts()
   end
 
   def onCmdStopTimer(sender, sel, ptr)
