@@ -29,9 +29,9 @@ class LXAlarm < FXMainWindow
     @welcome_view =WelcomeView.new(@switcher)
     
     #for test
-    @alarm = YAML.load_file("cook_a_cake.alm")
-    AlarmView.new(@switcher,@alarm)
-    @switcher.setCurrent 1
+    #@alarm = YAML.load_file("cook_a_cake.alm")
+    #AlarmView.new(@switcher,@alarm)
+    #@switcher.setCurrent 1
 end
   
   
@@ -41,6 +41,18 @@ end
     # File Menu
     file_menu = FXMenuPane.new(self)
     FXMenuTitle.new(menu_bar, "File", :popupMenu => file_menu)
+
+    # File Menu -- New
+    new_alarm_command = FXMenuCommand.new(file_menu, "New")
+    new_alarm_command.connect(SEL_COMMAND) do
+      alarm_title =
+        FXInputDialog.getString("My Alarm", self, "New Alarm", "Name:")
+      if alarm_title
+        @alarm = Alarm.new(alarm_title)
+      end
+    end
+
+    # File Menu -- Open...
     open_cmd = FXMenuCommand.new(file_menu, "Open...")
     open_cmd.connect(SEL_COMMAND) do
       dialog = FXFileDialog.new(self, "Open an Alarm")
@@ -51,25 +63,57 @@ end
       end
     end
 
-    new_alarm_command = FXMenuCommand.new(file_menu, "New Alarm...")
-    new_alarm_command.connect(SEL_COMMAND) do
-      alarm_title =
-        FXInputDialog.getString("My Alarm", self, "New Alarm", "Name:")
-      if alarm_title
-        @alarm = Alarm.new(alarm_title)
-      end
+    # File Menu -- Seperator
+    FXMenuSeparator.new(file_menu)
+
+    # File Menu -- Save
+    save_cmd = FXMenuCommand.new(file_menu, "Save")
+    save_cmd.connect(SEL_COMMAND) do
     end
 
-    exit_cmd = FXMenuCommand.new(file_menu, "Exit")
+    # File Menu -- Save As ...
+    save_as_cmd = FXMenuCommand.new(file_menu, "Save As ...")
+    save_as_cmd.connect(SEL_COMMAND) do
+    end
 
+    # File Menu -- Seperator
+    FXMenuSeparator.new(file_menu)
+
+    # File Menu -- Close
+    close_cmd = FXMenuCommand.new(file_menu, "Close")
+    close_cmd.connect(SEL_COMMAND) do
+    end
+
+    # File Menu -- Exit
+    exit_cmd = FXMenuCommand.new(file_menu, "Exit")
     exit_cmd.connect(SEL_COMMAND) do
       store_alarm_file
       clean_up(self)
       exit
     end
+
+    # Edit Menu
+    edit_menu = FXMenuPane.new(self)
+    FXMenuTitle.new(menu_bar, "Edit", :popupMenu => edit_menu)
+
+    # Edit Menu -- Edit Alarm
+    edit_alarm_cmd = FXMenuCommand.new(edit_menu, "Edit Alarm")
+    edit_alarm_cmd.connect(SEL_COMMAND) do
+    end
+
+    # Edit Menu -- Seperator
+    FXMenuSeparator.new(edit_menu)
+
+    # Edit Menu -- Preferences ...
+    preferences_cmd = FXMenuCommand.new(edit_menu, "Preferences ...")
+    preferences_cmd.connect(SEL_COMMAND) do
+    end
+
     # Alarm Menu
     alarm_menu = FXMenuPane.new(self)
     FXMenuTitle.new(menu_bar, "Alarm", :popupMenu => alarm_menu)
+
+    # Alarm Menu -- Start
     start_cmd = FXMenuCommand.new(alarm_menu, "Start")
     start_cmd.connect(SEL_COMMAND) do
       @countingdown = true
@@ -80,6 +124,8 @@ end
     start_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
       @countingdown ? sender.disable : sender.enable
     end
+
+    # Alarm Menu -- Stop
     stop_cmd = FXMenuCommand.new(alarm_menu, "Stop")
     stop_cmd.connect(SEL_COMMAND) do
       @countingdown = false
@@ -90,6 +136,39 @@ end
     end
     stop_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
       @countingdown ? sender.enable : sender.disable
+    end
+
+    # Alarm Menu -- Seperator
+    FXMenuSeparator.new(alarm_menu)
+
+    # Alarm Menu -- Next Step
+    next_cmd = FXMenuCommand.new(alarm_menu, "Next Step")
+    next_cmd.connect(SEL_COMMAND) do
+    end
+
+    # Alarm Menu -- Pause
+    pause_cmd = FXMenuCommand.new(alarm_menu, "Pause")
+    pause_cmd.connect(SEL_COMMAND) do
+    end
+
+    # Alarm Menu -- Previous Step
+    previous_cmd = FXMenuCommand.new(alarm_menu, "Previous Step")
+    previous_cmd.connect(SEL_COMMAND) do
+    end
+
+
+    # Help Menu
+    help_menu = FXMenuPane.new(self)
+    FXMenuTitle.new(menu_bar, "Help", :popupMenu => help_menu)
+
+    # Help Menu -- Help
+    help_cmd = FXMenuCommand.new(help_menu, "Help")
+    help_cmd.connect(SEL_COMMAND) do
+    end
+
+    # Help Menu -- About
+    about_cmd = FXMenuCommand.new(help_menu, "About LX's Alarm")
+    about_cmd.connect(SEL_COMMAND) do
     end
 
     # Initialize private variables
