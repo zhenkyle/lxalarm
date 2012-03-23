@@ -29,6 +29,10 @@ class LXAlarm < FXMainWindow
     #Creating Welcome View
     @welcome_view =WelcomeView.new(@switcher)
     
+    # Initialize private variables
+    @alarm = nil
+    @alarm_dirty = false
+    @counting_down = false
     #for test
     #@alarm = YAML.load_file("cook_a_cake.alm")
     #AlarmView.new(@switcher,@alarm)
@@ -71,10 +75,16 @@ end
     save_cmd = FXMenuCommand.new(file_menu, "Save")
     save_cmd.connect(SEL_COMMAND) do
     end
+    save_cmd.connect(SEL_UPDATE) do |sender, sel, data|
+      sender.enabled = (! @alarm.nil?) && @alarm_dirty
+    end
 
     # File Menu -- Save As ...
     save_as_cmd = FXMenuCommand.new(file_menu, "Save As ...")
     save_as_cmd.connect(SEL_COMMAND) do
+    end
+    save_as_cmd.connect(SEL_UPDATE) do |sender, sel, data|
+      sender.enabled = (! @alarm.nil?) && @alarm_dirty
     end
 
     # File Menu -- Seperator
@@ -83,6 +93,9 @@ end
     # File Menu -- Close
     close_cmd = FXMenuCommand.new(file_menu, "Close")
     close_cmd.connect(SEL_COMMAND) do
+    end
+    close_cmd.connect(SEL_UPDATE) do |sender, sel, data|
+      sender.enabled = ! @alarm.nil?
     end
 
     # File Menu -- Exit
@@ -100,6 +113,9 @@ end
     # Edit Menu -- Edit Alarm
     edit_alarm_cmd = FXMenuCommand.new(edit_menu, "Edit Alarm")
     edit_alarm_cmd.connect(SEL_COMMAND) do
+    end
+    edit_alarm_cmd.connect(SEL_UPDATE) do |sender, sel, data|
+      sender.enabled = !@alarm.nil?
     end
 
     # Edit Menu -- Seperator
@@ -131,18 +147,26 @@ end
     # Control Menu -- Start
     start_cmd = FXMenuCommand.new(control_menu, "Start")
     start_cmd.connect(SEL_COMMAND) do
-      @countingdown = true
+      @counting_down = true
       getApp().addTimeout(TIMER_INTERVAL, method(:onTimeout))
     end
     start_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
-      @countingdown ? sender.disable : sender.enable
+      if @alarm.nil?
+        sender.disable
+      else
+        @counting_down ? sender.disable : sender.enable
+      end
     end
 
     # Control Menu -- Stop
     stop_cmd = FXMenuCommand.new(control_menu, "Stop")
     stop_cmd.connect(SEL_COMMAND, method(:onCmdStopTimer))
     stop_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
-      @countingdown ? sender.enable : sender.disable
+      if @alarm.nil?
+        sender.disable
+      else
+        @counting_down ? sender.enable : sender.disable
+      end
     end
 
     # Control Menu -- Seperator
@@ -152,15 +176,36 @@ end
     previous_cmd = FXMenuCommand.new(control_menu, "Previous Step")
     previous_cmd.connect(SEL_COMMAND) do
     end
+    previous_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
+      if @alarm.nil?
+        sender.disable
+      else
+        !@counting_down ? sender.disable : sender.enable
+      end
+    end
 
     # Control Menu -- Pause
     pause_cmd = FXMenuCommand.new(control_menu, "Pause")
     pause_cmd.connect(SEL_COMMAND) do
     end
+    pause_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
+      if @alarm.nil?
+        sender.disable
+      else
+        !@counting_down ? sender.disable : sender.enable
+      end
+    end
 
     # Control Menu -- Next Step
     next_cmd = FXMenuCommand.new(control_menu, "Next Step")
     next_cmd.connect(SEL_COMMAND) do
+    end
+    next_cmd.connect(SEL_UPDATE) do |sender, sel, ptr|
+      if @alarm.nil?
+        sender.disable
+      else
+        !@counting_down ? sender.disable : sender.enable
+      end
     end
 
 
@@ -178,9 +223,6 @@ end
     about_cmd.connect(SEL_COMMAND) do
     end
 
-    # Initialize private variables
-    @countingdown = false
-    @timer = nil
   end
 
   def add_tool_bar
@@ -224,9 +266,15 @@ end
     save_button = FXButton.new(tool_bar,
       "\tSave\tSave alarm.",
       :icon => save_icon)
+    save_button.connect(SEL_UPDATE) do |sender, sel, data|
+      sender.enabled = (! @alarm.nil?) && @alarm_dirty
+    end
     save_as_button = FXButton.new(tool_bar,
       "\tSave As ...\tSave alarm to a new file.",
       :icon => save_as_icon)
+    save_as_button.connect(SEL_UPDATE) do |sender, sel, data|
+      sender.enabled = (! @alarm.nil?) && @alarm_dirty
+    end
     exit_button = FXButton.new(tool_bar,
       "\tExit\tExit the program.",
       :icon => exit_icon)
@@ -237,6 +285,9 @@ end
     edit_alarm_button = FXButton.new(tool_bar,
       "\tEdit\tEdit alarm.",
       :icon => edit_alarm_icon)
+    edit_alarm_button.connect(SEL_UPDATE) do |sender, sel, data|
+      sender.enabled = !@alarm.nil?
+    end
     preferences_button = FXButton.new(tool_bar,
       "\tPreferences ...\tEdit system preferences.",
       :icon => preferences_icon)
@@ -247,15 +298,43 @@ end
     previous_button = FXButton.new(tool_bar,
       "\tPrevious Step\tGoto previous step.",
       :icon => previous_icon)
+    previous_button.connect(SEL_UPDATE) do |sender, sel, ptr|
+      if @alarm.nil?
+        sender.disable
+      else
+        !@counting_down ? sender.disable : sender.enable
+      end
+    end
     start_button = FXButton.new(tool_bar,
       "\tStart\tStart running alarm.",
       :icon => start_icon)
+    start_button.connect(SEL_UPDATE) do |sender, sel, ptr|
+      if @alarm.nil?
+        sender.disable
+      else
+        @counting_down ? sender.disable : sender.enable
+      end
+    end
     next_button = FXButton.new(tool_bar,
       "\tNext Step\tGoto next step.",
       :icon => next_icon)
+    next_button.connect(SEL_UPDATE) do |sender, sel, ptr|
+      if @alarm.nil?
+        sender.disable
+      else
+        !@counting_down ? sender.disable : sender.enable
+      end
+    end
     stop_button = FXButton.new(tool_bar,
       "\tStop\tStop running alarm.",
       :icon => stop_icon)
+    stop_button.connect(SEL_UPDATE) do |sender, sel, ptr|
+      if @alarm.nil?
+        sender.disable
+      else
+        @counting_down ? sender.enable : sender.disable
+      end
+    end
 
     # Help Toolbar
     FXFrame.new(tool_bar,
@@ -316,7 +395,7 @@ end
   end
 
   def onCmdStopTimer(sender, sel, ptr)
-    @countingdown = false
+    @counting_down = false
     if getApp().hasTimeout?(@timer)
       getApp().removeTimeout(@timer)
       @timer = nil
@@ -327,7 +406,7 @@ end
    puts i
    if i != 0
      @timer = getApp().addTimeout(TIMER_INTERVAL, method(:onTimeout))
-     @countingdown = false
+     @counting_down = false
    end
   end
 end
