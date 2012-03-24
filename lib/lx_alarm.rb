@@ -11,6 +11,7 @@ require 'yaml'
 require 'step_view'
 require 'alarm_view'
 require 'welcome_view'
+require 'setting_view'
 
 
 class LXAlarm < FXMainWindow
@@ -19,7 +20,7 @@ class LXAlarm < FXMainWindow
   TIMER_INTERVAL = 1000
   
   def initialize(app)
-    super(app,"LX's Alarm: An Alarm with step settings", :width => 650, :height => 450)
+    super(app,"LX's Alarm: An Alarm with step settings", :width => 700, :height => 500)
     # Make all menu
     add_menu_bar
 
@@ -28,25 +29,24 @@ class LXAlarm < FXMainWindow
 
     # Make a status bar
     FXStatusBar.new(self, :opts => LAYOUT_SIDE_BOTTOM|LAYOUT_FILL_X)
+    
+    # Make tab book
+    add_tab_book
+
 
     # Make a tool tip
     FXToolTip.new(app)
    
-    @switcher = FXSwitcher.new(self, :opts => LAYOUT_FILL)
-    
-    #Creating Welcome View
-    @welcome_view =WelcomeView.new(@switcher)
-    
     # Initialize private variables
     @alarm = nil
-    @alarm_dirty = false
+    @dirty = false
     @counting_down = false
+
     #for test
     #@alarm = YAML.load_file("cook_a_cake.alm")
     #AlarmView.new(@switcher,@alarm)
     #@switcher.setCurrent 1
   end
-  
   
   def add_menu_bar
     menu_bar = FXMenuBar.new(self, LAYOUT_SIDE_TOP|LAYOUT_FILL_X)
@@ -96,10 +96,10 @@ class LXAlarm < FXMainWindow
     FXMenuTitle.new(menu_bar, "Edit", :popupMenu => edit_menu)
 
     # Edit Menu -- Edit Alarm
-    edit_alarm_cmd = FXMenuCommand.new(edit_menu, "Edit Alarm")
-    edit_alarm_cmd.connect(SEL_COMMAND) do
+    set_alarm_cmd = FXMenuCommand.new(edit_menu, "Set Alarm")
+    set_alarm_cmd.connect(SEL_COMMAND) do
     end
-    edit_alarm_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
+    set_alarm_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
 
     # Edit Menu -- Seperator
     FXMenuSeparator.new(edit_menu)
@@ -198,8 +198,9 @@ class LXAlarm < FXMainWindow
     open_icon = load_icon("open-alt-icon.png")
     save_icon = load_icon("save-icon.png")
     save_as_icon = load_icon("install-icon.png")
+    close_icon = load_icon("archive-icon.png")
     exit_icon = load_icon("exit-icon.png")
-    edit_alarm_icon = load_icon("notebook-icon.png")
+    set_alarm_icon = load_icon("notebook-icon.png")
     preferences_icon = load_icon("advanced-icon.png")
     start_icon = load_icon("play-icon.png")
     stop_icon = load_icon("stop-alt-icon.png")
@@ -221,15 +222,15 @@ class LXAlarm < FXMainWindow
     save_button = FXButton.new(tool_bar,
       "\tSave\tSave alarm.",
       :icon => save_icon)
-    save_button.connect(SEL_UPDATE) do |sender, sel, data|
-      sender.enabled = (! @alarm.nil?) && @alarm_dirty
-    end
+    save_button.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
     save_as_button = FXButton.new(tool_bar,
       "\tSave As ...\tSave alarm to a new file.",
       :icon => save_as_icon)
-    save_as_button.connect(SEL_UPDATE) do |sender, sel, data|
-      sender.enabled = (! @alarm.nil?) && @alarm_dirty
-    end
+    save_as_button.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
+    close_button = FXButton.new(tool_bar,
+      "\tClose\tClose opened Alarm.",
+      :icon => close_icon)
+    close_button.connect(SEL_UPDATE, method(:on_upd_alarm_open))
     exit_button = FXButton.new(tool_bar,
       "\tExit\tExit the program.",
       :icon => exit_icon)
@@ -238,10 +239,10 @@ class LXAlarm < FXMainWindow
     # Edit Toolbar
     FXFrame.new(tool_bar,
       LAYOUT_TOP|LAYOUT_LEFT|LAYOUT_FIX_WIDTH|LAYOUT_FIX_HEIGHT, :width => 8)
-    edit_alarm_button = FXButton.new(tool_bar,
-      "\tEdit\tEdit alarm.",
-      :icon => edit_alarm_icon)
-    edit_alarm_button.connect(SEL_UPDATE) do |sender, sel, data|
+    set_alarm_button = FXButton.new(tool_bar,
+      "\tSet Alarm\tChang alarm setting.",
+      :icon => set_alarm_icon)
+    set_alarm_button.connect(SEL_UPDATE) do |sender, sel, data|
       sender.enabled = !@alarm.nil?
     end
     preferences_button = FXButton.new(tool_bar,
@@ -306,6 +307,13 @@ class LXAlarm < FXMainWindow
     about_button.connect(SEL_COMMAND, method(:on_cmd_help_about))
   end
 
+  def add_tab_book
+    @tabbook = FXTabBook.new(self,:opts => LAYOUT_FILL)
+    
+    welcome_tab = FXTabItem.new(@tabbook,"Welcome")
+    welcome_page = WelcomeView.new(@tabbook, FRAME_RAISED|LAYOUT_FILL)
+  end
+  
 
   # A function to load png icons
   def load_icon(filename)
@@ -326,11 +334,15 @@ class LXAlarm < FXMainWindow
 
   # Menu / Button command events
   def on_cmd_file_new(sender,selector,data)
-    alarm_title =
-      FXInputDialog.getString("My Alarm", self, "New Alarm", "Name:")
-    if alarm_title
-      @alarm = Alarm.new(alarm_title)
-    end
+    @dirty = true
+    @alarm = Alarm.new("A Test Alarm")
+    @alarm << Step.new("AAA",100)
+    alarm_view_tab = FXTabItem.new(@tabbook, "Alarm View")
+    alarm_view_page = AlarmView.new(@tabbook,@alarm,FRAME_RAISED|LAYOUT_FILL)
+    #alarm_view_page = WelcomeView.new(@tabbook, FRAME_RAISED|LAYOUT_FILL)
+    alarm_set_tab = FXTabItem.new(@tabbook, "Alarm Set")
+    alarm_set_page = SettingView.new(@tabbook, FRAME_RAISED|LAYOUT_FILL)
+    @tabbook.create
   end
 
   def on_cmd_file_open(sender,selector,data)
@@ -372,7 +384,7 @@ class LXAlarm < FXMainWindow
   end
 
   def on_upd_alarm_dirty(sender,selector,data)
-    sender.enabled = (!@alarm.nil?) && @alarm_dirty
+    sender.enabled = (!@alarm.nil?) && @dirty
   end
 
   def on_upd_alarm_running(sender,selector,data)
