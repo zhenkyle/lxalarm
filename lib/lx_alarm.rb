@@ -97,8 +97,7 @@ class LXAlarm < FXMainWindow
 
     # Edit Menu -- Edit Alarm
     set_alarm_cmd = FXMenuCommand.new(edit_menu, "Set Alarm")
-    set_alarm_cmd.connect(SEL_COMMAND) do
-    end
+    set_alarm_cmd.connect(SEL_COMMAND, method(:on_cmd_edit_set_alarm))
     set_alarm_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
 
     # Edit Menu -- Seperator
@@ -242,6 +241,7 @@ class LXAlarm < FXMainWindow
     set_alarm_button = FXButton.new(tool_bar,
       "\tSet Alarm\tChang alarm setting.",
       :icon => set_alarm_icon)
+    set_alarm_button.connect(SEL_COMMAND, method(:on_cmd_edit_set_alarm))
     set_alarm_button.connect(SEL_UPDATE) do |sender, sel, data|
       sender.enabled = !@alarm.nil?
     end
@@ -335,13 +335,13 @@ class LXAlarm < FXMainWindow
   # Menu / Button command events
   def on_cmd_file_new(sender,selector,data)
     @dirty = true
-    @alarm = Alarm.new("A Test Alarm")
-    @alarm << Step.new("AAA",100)
+    @alarm = Alarm.new("Untitled Alarm")
+    @alarm << Step.new("Test Step 1",100)
+    @alarm << Step.new("Test Step 2",200)
     alarm_view_tab = FXTabItem.new(@tabbook, "Alarm View")
     alarm_view_page = AlarmView.new(@tabbook,@alarm,FRAME_RAISED|LAYOUT_FILL)
-    #alarm_view_page = WelcomeView.new(@tabbook, FRAME_RAISED|LAYOUT_FILL)
     alarm_set_tab = FXTabItem.new(@tabbook, "Alarm Set")
-    alarm_set_page = SettingView.new(@tabbook, FRAME_RAISED|LAYOUT_FILL)
+    alarm_set_page = SettingView.new(@tabbook, @alarm, FRAME_RAISED|LAYOUT_FILL)
     @tabbook.create
   end
 
@@ -358,6 +358,10 @@ class LXAlarm < FXMainWindow
     store_alarm_file
     clean_up(self)
     exit
+  end
+  
+  def on_cmd_edit_set_alarm(sender,selector,data)
+  	#TODO active setting view 
   end
   
   def on_cmd_control_start(sender,selector,data)

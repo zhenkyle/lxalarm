@@ -30,21 +30,27 @@ end
 
 class SettingView < FXPacker
   
-  attr_accessor :alarm
-  
-  def initialize(p, opts)
+ 
+  def initialize(p, alarm, opts)
     super(p,:opts => opts)
     
-    @alarm = nil
+    @alarm = alarm
 
     alarm_name_area = FXHorizontalFrame.new(self,
       :opts => LAYOUT_FILL_X|LAYOUT_SIDE_TOP)
     
     FXLabel.new(alarm_name_area, "Alarm: ")
 
-    @alarm_name_target = FXDataTarget.new("Untitled Alarm")
-    alarm_name_text = FXTextField.new(alarm_name_area, 25,
-      :target => @alarm_name_target, :selector => FXDataTarget::ID_VALUE)
+    alarm_name_text = FXTextField.new(alarm_name_area, 25)
+    alarm_name_text.connect(SEL_COMMAND) do |sender, selector, data|
+      @alarm.name = sender.text
+	end
+
+	# Because @alarm.name won't be updated elsewhere, this is not needed
+    # alarm_name_text.connect(SEL_UPDATE) do |sender, selector, data|
+    #   sender.text = @alarm.name
+	# end
+	
     FXLabel.new(self,"Steps:")
     
     splitter = FXSplitter.new(self,
