@@ -97,12 +97,28 @@ class SettingView < FXPacker
       FXButton.new(buttons, "-",
         :target => self, :selector => FXDialogBox::ID_CANCEL,
         :opts => BUTTON_NORMAL|LAYOUT_LEFT)
-      FXButton.new(buttons, "^",
-        :target => self, :selector => FXDialogBox::ID_CANCEL,
-        :opts => BUTTON_NORMAL|LAYOUT_LEFT)
-      FXButton.new(buttons, "V",
-        :target => self, :selector => FXDialogBox::ID_CANCEL,
-        :opts => BUTTON_NORMAL|LAYOUT_LEFT)
+      
+      up_button = FXButton.new(buttons, "^", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
+      up_button.connect(SEL_COMMAND) do |sender,selector,data|
+        i = @setting_step_list_view.currentItem
+        if i > 0
+          item = @setting_step_list_view.getItemText(i)
+          @setting_step_list_view.setItemText(i,@setting_step_list_view.getItemText(i-1))
+          @setting_step_list_view.setItemText(i-1,item)
+          @alarm.swap_step(i,i-1)
+        end
+      end
+        
+      down_button = FXButton.new(buttons, "V", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
+      down_button.connect(SEL_COMMAND) do |sender,selector,data|
+        i = @setting_step_list_view.currentItem
+        if i < @setting_step_list_view.numItems - 1
+          item = @setting_step_list_view.getItemText(i)
+          @setting_step_list_view.setItemText(i,@setting_step_list_view.getItemText(i+1))
+          @setting_step_list_view.setItemText(i+1,item)
+          @alarm.swap_step(i,i+1)
+        end
+      end
 
   end
 end

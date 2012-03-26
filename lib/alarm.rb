@@ -14,12 +14,16 @@ class Alarm
   def <<(step)
     @steps << step
   end
-  def [](step)
-    @steps[step]
+  def [](index)
+    @steps[index]
   end
   
   def each(&block)
     @steps.each(&block)
+  end
+  
+  def swap_step(index1, index2)
+    @steps[index1], @steps[index2] = @steps[index2], @steps[index1]
   end
   
   def duration
