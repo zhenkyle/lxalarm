@@ -47,7 +47,7 @@ class SettingView < FXPacker
 
     alarm_name_text = FXTextField.new(alarm_name_area, 25)
 
-  	# Because @alarm.name won't be updated elsewhere, don't need SEL_UPDATE here
+    # Because @alarm.name won't be updated elsewhere, don't need SEL_UPDATE here
     alarm_name_text.text = @alarm.name
 
     alarm_name_text.connect(SEL_COMMAND) do |sender, selector, data|
@@ -100,8 +100,8 @@ class SettingView < FXPacker
       @setting_step_list_view.appendItem(step.name)
       step_view = SettingStepView.new(@switcher, step, @setting_step_list_view, LAYOUT_FILL)
       @switcher.create
-  	end
-  	
+    end
+
     remove_button = FXButton.new(buttons, "-", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
     remove_button.connect(SEL_COMMAND) do |sender,selector,data|
       i = @setting_step_list_view.currentItem
@@ -110,15 +110,15 @@ class SettingView < FXPacker
       step_view = @switcher.childAtIndex(i)
       @switcher.removeChild(step_view)
       @switcher.create
-  	end
+    end
     
     up_button = FXButton.new(buttons, "^", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
     up_button.connect(SEL_COMMAND) do |sender,selector,data|
       i = @setting_step_list_view.currentItem
       if i > 0
-        item = @setting_step_list_view.getItemText(i)
-        @setting_step_list_view.setItemText(i,@setting_step_list_view.getItemText(i-1))
-        @setting_step_list_view.setItemText(i-1,item)
+        # move @setting_step_list_view items
+        @setting_step_list_view.moveItem(i-1,i)
+        # move @alarm items
         @alarm.swap_step(i,i-1)
       end
     end
@@ -127,9 +127,9 @@ class SettingView < FXPacker
     down_button.connect(SEL_COMMAND) do |sender,selector,data|
       i = @setting_step_list_view.currentItem
       if i < @setting_step_list_view.numItems - 1
-        item = @setting_step_list_view.getItemText(i)
-        @setting_step_list_view.setItemText(i,@setting_step_list_view.getItemText(i+1))
-        @setting_step_list_view.setItemText(i+1,item)
+        # move @setting_step_list_view items
+        @setting_step_list_view.moveItem(i+1,i)
+        # move @alarm items
         @alarm.swap_step(i,i+1)
       end
     end
