@@ -336,8 +336,7 @@ class LXAlarm < FXMainWindow
   def on_cmd_file_new(sender,selector,data)
     @dirty = true
     @alarm = Alarm.new("Untitled Alarm")
-    @alarm << Step.new("Test Step 1",100)
-    @alarm << Step.new("Test Step 2",200)
+    @alarm << Step.new("Step 1",60)
     alarm_view_tab = FXTabItem.new(@tabbook, "Alarm View")
     alarm_view_page = AlarmView.new(@tabbook,@alarm,FRAME_RAISED|LAYOUT_FILL)
     alarm_set_tab = FXTabItem.new(@tabbook, "Alarm Set")

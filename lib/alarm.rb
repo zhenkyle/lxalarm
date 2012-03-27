@@ -22,6 +22,10 @@ class Alarm
     @steps.each(&block)
   end
   
+  def delete_at(index)
+  	@steps.delete_at(index)
+  end
+  
   def duration
     duration = 0
     @steps.each {|step| duration +=step.duration}

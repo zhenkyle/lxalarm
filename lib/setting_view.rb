@@ -56,6 +56,8 @@ class SettingView < FXPacker
 
     FXHorizontalSeparator.new(self, LAYOUT_FILL_X|SEPARATOR_GROOVE)
 	
+    add_terminating_buttons
+   
     FXLabel.new(self,"Steps:")
     
     splitter = FXSplitter.new(self,
@@ -76,7 +78,6 @@ class SettingView < FXPacker
        step_view = SettingStepView.new(@switcher, step, @setting_step_list_view, LAYOUT_FILL)
     end
     
-    add_terminating_buttons
   end
   
 
@@ -91,18 +92,31 @@ class SettingView < FXPacker
       :target => self, :selector => FXDialogBox::ID_CANCEL,
       :opts => BUTTON_NORMAL|LAYOUT_RIGHT)
 
-      FXButton.new(buttons, "+",
-        :target => self, :selector => FXDialogBox::ID_ACCEPT,
-        :opts => BUTTON_NORMAL|LAYOUT_LEFT)
-      FXButton.new(buttons, "-",
-        :target => self, :selector => FXDialogBox::ID_CANCEL,
-        :opts => BUTTON_NORMAL|LAYOUT_LEFT)
-      FXButton.new(buttons, "^",
-        :target => self, :selector => FXDialogBox::ID_CANCEL,
-        :opts => BUTTON_NORMAL|LAYOUT_LEFT)
-      FXButton.new(buttons, "V",
-        :target => self, :selector => FXDialogBox::ID_CANCEL,
-        :opts => BUTTON_NORMAL|LAYOUT_LEFT)
+    add_button = FXButton.new(buttons, "+", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
+    add_button.connect(SEL_COMMAND) do |sender,selector,data|
+      step = Step.new("New Step", 60)
+      @alarm << step
+      @setting_step_list_view.appendItem(step.name)
+      step_view = SettingStepView.new(@switcher, step, @setting_step_list_view, LAYOUT_FILL)
+      @switcher.create
+  	end
+  	
+    remove_button = FXButton.new(buttons, "-", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
+    remove_button.connect(SEL_COMMAND) do |sender,selector,data|
+      i = @setting_step_list_view.currentItem
+      @alarm.delete_at(i)
+      @setting_step_list_view.removeItem(i)
+      step_view = @switcher.childAtIndex(i)
+      @switcher.removeChild(step_view)
+      @switcher.create
+  	end
+    
+    FXButton.new(buttons, "^",
+      :target => self, :selector => FXDialogBox::ID_CANCEL,
+      :opts => BUTTON_NORMAL|LAYOUT_LEFT)
+    FXButton.new(buttons, "V",
+      :target => self, :selector => FXDialogBox::ID_CANCEL,
+      :opts => BUTTON_NORMAL|LAYOUT_LEFT)
 
   end
 end
