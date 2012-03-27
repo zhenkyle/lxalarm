@@ -81,8 +81,7 @@ class LXAlarm < FXMainWindow
 
     # File Menu -- Close
     close_cmd = FXMenuCommand.new(file_menu, "Close")
-    close_cmd.connect(SEL_COMMAND) do
-    end
+    close_cmd.connect(SEL_COMMAND, method(:on_cmd_file_close))
     close_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
 
     # File Menu -- Exit
@@ -233,6 +232,7 @@ class LXAlarm < FXMainWindow
       "\tClose\tClose opened Alarm.",
       :icon => close_icon)
     close_button.connect(SEL_UPDATE, method(:on_upd_alarm_open))
+    close_button.connect(SEL_COMMAND, method(:on_cmd_file_close))
     
     exit_button = FXButton.new(tool_bar,
       "\tExit\tExit the program.",
@@ -339,41 +339,31 @@ class LXAlarm < FXMainWindow
   # Menu / Button command events
   def on_cmd_file_new(sender,selector,data)
   	if @alarm != nil
-      if @alarm.dirty == true
-        answer = FXMessageBox.question(self, MBOX_YES_NO_CANCEL,
-          "LX's alarm",
-          "This file is unsaved.\n Do you want to save it?")
-        if answer == MBOX_CLICKED_CANCEL
-        	return
-    	elsif answer == MBOX_CLICKED_YES
-          on_cmd_file_save(sender,selector,data)
-        end
-        @tabbook.removeChild(@tabbook.childAtIndex(5))
-        @tabbook.removeChild(@tabbook.childAtIndex(4))
-        @tabbook.removeChild(@tabbook.childAtIndex(3))
-        @tabbook.removeChild(@tabbook.childAtIndex(2))
-        @filename = nil
-      end
+  	  rtn_value = on_cmd_file_close(sender,selector,data)
+  	  return if rtn_value == -1
  	end
 
     @alarm = Alarm.new("Untitled Alarm")
     @alarm.dirty = true
     @alarm << Step.new("Step 1",60)
-    alarm_view_tab = FXTabItem.new(@tabbook, "Alarm View")
-    alarm_view_page = AlarmView.new(@tabbook,@alarm,FRAME_RAISED|LAYOUT_FILL)
-    alarm_set_tab = FXTabItem.new(@tabbook, "Alarm Set")
-    alarm_set_page = SettingView.new(@tabbook, @alarm, FRAME_RAISED|LAYOUT_FILL)
-    @tabbook.create
+    generate_tabbook
   	@tabbook.setCurrent(2)
   end
 
   def on_cmd_file_open(sender,selector,data)
+  	if @alarm != nil
+  	  rtn_value = on_cmd_file_close(sender,selector,data)
+  	  return if rtn_value == -1
+ 	end
     dialog = FXFileDialog.new(self, "Open an Alarm")
     dialog.selectMode = SELECTFILE_EXISTING
     dialog.patternList = ["Alarm Files (*.alm)"]
     if dialog.execute != 0
-      open_alarm_file(dialog.filename)
+      @filename = dialog.filename
+      @alarm = YAML.load_file(@filename)
     end
+    generate_tabbook
+    @tabbook.setCurrent(1)
   end
 
   def on_cmd_file_save(sender,selector,data)
@@ -396,6 +386,28 @@ class LXAlarm < FXMainWindow
       save_alarm_file(@filename)
       @alarm.dirty = false
     end
+  end
+  
+  def on_cmd_file_close(sender,selector,data)
+    if @alarm.dirty == true
+      answer = FXMessageBox.question(self, MBOX_YES_NO_CANCEL,
+        "LX's alarm",
+        "This file is unsaved.\n Do you want to save it?")
+      if answer == MBOX_CLICKED_CANCEL
+      	return -1
+      elsif answer == MBOX_CLICKED_YES
+        on_cmd_file_save(sender,selector,data)
+      end
+    end
+    if ! @alarm.nil?
+      @tabbook.removeChild(@tabbook.childAtIndex(5))
+      @tabbook.removeChild(@tabbook.childAtIndex(4))
+      @tabbook.removeChild(@tabbook.childAtIndex(3))
+      @tabbook.removeChild(@tabbook.childAtIndex(2))
+      @filename = nil
+      @alarm = nil
+    end
+    return 0
   end
   
   def on_cmd_file_exit(sender,selector,data)
@@ -445,19 +457,14 @@ class LXAlarm < FXMainWindow
 
 
   # Working Fuctions
-  def open_alarm_file(filepath)
-    if @switcher.children.length >1
-      @switcher.removeChild(@switcher.childAtIndex(1))
-    end
-    @alarm = YAML.load_file(filepath)
-    #Creating alarm view from @alarm
-#    AlarmView.new(@switcher,@alarm)
-    @switcher.create
-    @switcher.recalc
-#    @switcher.setCurrent 1
-#    @switcher.create
+  def generate_tabbook
+    alarm_view_tab = FXTabItem.new(@tabbook, "Alarm View")
+    alarm_view_page = AlarmView.new(@tabbook,@alarm,FRAME_RAISED|LAYOUT_FILL)
+    alarm_set_tab = FXTabItem.new(@tabbook, "Alarm Set")
+    alarm_set_page = SettingView.new(@tabbook, @alarm, FRAME_RAISED|LAYOUT_FILL)
+    @tabbook.create
   end
-  
+
   def save_alarm_file(filepath)
   	@alarm.dirty = false
     File.open(filepath,"w") do |io|
