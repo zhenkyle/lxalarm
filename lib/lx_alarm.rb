@@ -69,12 +69,12 @@ class LXAlarm < FXMainWindow
     # File Menu -- Save
     save_cmd = FXMenuCommand.new(file_menu, "Save")
     save_cmd.connect(SEL_COMMAND, method(:on_cmd_file_save))
-    save_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
+    save_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
 
     # File Menu -- Save As ...
     save_as_cmd = FXMenuCommand.new(file_menu, "Save As ...")
     save_as_cmd.connect(SEL_COMMAND, method(:on_cmd_file_save_as))
-    save_as_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
+    save_as_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_open))
 
     # File Menu -- Seperator
     FXMenuSeparator.new(file_menu)
@@ -219,13 +219,13 @@ class LXAlarm < FXMainWindow
     save_button = FXButton.new(tool_bar,
       "\tSave\tSave alarm.",
       :icon => save_icon)
-    save_button.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
+    save_button.connect(SEL_UPDATE, method(:on_upd_alarm_open))
     save_button.connect(SEL_COMMAND, method(:on_cmd_file_save))
     
     save_as_button = FXButton.new(tool_bar,
       "\tSave As ...\tSave alarm to a new file.",
       :icon => save_as_icon)
-    save_as_button.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
+    save_as_button.connect(SEL_UPDATE, method(:on_upd_alarm_open))
     save_as_button.connect(SEL_COMMAND, method(:on_cmd_file_save_as))
     
     close_button = FXButton.new(tool_bar,
@@ -467,8 +467,12 @@ class LXAlarm < FXMainWindow
 
   def save_alarm_file(filepath)
   	@alarm.dirty = false
+  	alarm = Alarm.new(@alarm.name)
+  	@alarm.each do |step|
+  	  alarm << Step.new(step.name,step.duration)
+  	end
     File.open(filepath,"w") do |io|
-      io.write(YAML.dump(@alarm))
+      io.write(YAML.dump(alarm))
     end
   end
 
