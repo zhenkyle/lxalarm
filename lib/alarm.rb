@@ -22,8 +22,16 @@ class Alarm
     @steps.each(&block)
   end
   
+  def insert(index, step)
+    @steps.insert(index,step)
+  end
+  
   def delete_at(index)
   	@steps.delete_at(index)
+  end
+
+  def step_count()
+  	@steps.count
   end
 
   def swap_step(index1, index2)

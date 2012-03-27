@@ -1,37 +1,3 @@
-class SettingStepView < FXVerticalFrame
-  attr_reader :step
-  def initialize(p, step, step_list_view, opts)
-    super(p, :opts => opts)
-    @step = step
-    @step_list_view = step_list_view
-    
-    p = FXMatrix.new(self, 2, :opts => MATRIX_BY_COLUMNS|LAYOUT_FILL)
-    FXLabel.new(p, "Name: ")
-
-    name_text = FXTextField.new(p, 25)
-    name_text.text = @step.name
-    name_text.connect(SEL_COMMAND) do |sender,selector,data|
-      @step.name = sender.text
-      @step_list_view.setItem(@step_list_view.currentItem,sender.text)
-    end
-    
-
-    FXLabel.new(p, "Duration: ")
-    duration_text = FXTextField.new(p, 25)
-    duration_text.text = @step.duration.to_s
-    duration_text.connect(SEL_VERIFY) do |sender, sel, tentative|
-      if tentative =~ /^[0-9]*$/
-        false
-      else
-        true
-      end
-    end
-    duration_text.connect(SEL_COMMAND) do |sender,selector,data|
-      @step.duration = sender.text
-    end
-  end
-end
-
 class SettingView < FXPacker
   
  
@@ -60,24 +26,47 @@ class SettingView < FXPacker
    
     FXLabel.new(self,"Steps:")
     
-    splitter = FXSplitter.new(self,
+    @splitter = FXSplitter.new(self,
       :opts => SPLITTER_HORIZONTAL|LAYOUT_FILL)
-    
-    @setting_step_list_view = FXList.new(splitter, :opts => LAYOUT_FILL, :width => 100)
-    
-    @switcher = FXSwitcher.new(splitter, :opts => LAYOUT_FILL)
-    
-    @setting_step_list_view.connect(SEL_COMMAND) do |sender,selector,data|
-      @switcher.current = sender.currentItem
+
+    @setting_step_list_view = FXList.new(@splitter, :opts => LAYOUT_FILL|LIST_SINGLESELECT, :width => 100)
+    @setting_step_list_view.connect(SEL_SELECTED) do |sender,selector,data|
+      i = data
+      sender.setCurrentItem(i)
+      @name_text.text = @alarm[i].name
+      @duration_text.text = @alarm[i].duration.to_s
+    end
+
+    p = FXMatrix.new(@splitter, 2, :opts => MATRIX_BY_COLUMNS|LAYOUT_FILL)
+    FXLabel.new(p, "Name: ")
+
+    @name_text = FXTextField.new(p, 25)
+    @name_text.connect(SEL_COMMAND) do |sender,selector,data|
+      i = @setting_step_list_view.currentItem
+      @alarm[i].name = sender.text
+      @setting_step_list_view.setItem(i,sender.text)
     end
     
+
+    FXLabel.new(p, "Duration: ")
+    @duration_text = FXTextField.new(p, 25)
+    @duration_text.connect(SEL_VERIFY) do |sender, sel, tentative|
+      if tentative =~ /^[0-9]*$/
+        false
+      else
+        true
+      end
+    end
+    @duration_text.connect(SEL_COMMAND) do |sender,selector,data|
+      i = @setting_step_list_view.currentItem
+      @alarm[i].duration = sender.text.to_i
+    end
     
     # Do with steps
     alarm.each do |step|
        @setting_step_list_view.appendItem(step.name)
-       step_view = SettingStepView.new(@switcher, step, @setting_step_list_view, LAYOUT_FILL)
     end
-    
+    @setting_step_list_view.selectItem(0,true)
   end
   
 
@@ -95,21 +84,26 @@ class SettingView < FXPacker
 
     add_button = FXButton.new(buttons, "+", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
     add_button.connect(SEL_COMMAND) do |sender,selector,data|
-      step = Step.new("New Step", 60)
-      @alarm << step
-      @setting_step_list_view.appendItem(step.name)
-      step_view = SettingStepView.new(@switcher, step, @setting_step_list_view, LAYOUT_FILL)
-      @switcher.create
+      step = Step.new("Step " + (@alarm.count + 1).to_s, 60)
+      i = @setting_step_list_view.currentItem
+      if i == @setting_step_list_view.numItems - 1
+        @setting_step_list_view.appendItem(step.name)
+        @alarm << step
+      else
+        @setting_step_list_view.insertItem(i+1, step.name)
+        @alarm.insert(i+1, step)
+      end
+      @setting_step_list_view.selectItem(i+1, true)
     end
 
     remove_button = FXButton.new(buttons, "-", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
     remove_button.connect(SEL_COMMAND) do |sender,selector,data|
-      i = @setting_step_list_view.currentItem
-      @alarm.delete_at(i)
-      @setting_step_list_view.removeItem(i)
-      step_view = @switcher.childAtIndex(i)
-      @switcher.removeChild(step_view)
-      @switcher.create
+      if @alarm.step_count > 1
+        i = @setting_step_list_view.currentItem
+        @alarm.delete_at(i)
+        @setting_step_list_view.removeItem(i)
+        @setting_step_list_view.selectItem(i-1,true)
+      end
     end
     
     up_button = FXButton.new(buttons, "^", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
@@ -122,7 +116,7 @@ class SettingView < FXPacker
         @alarm.swap_step(i,i-1)
       end
     end
-        
+
     down_button = FXButton.new(buttons, "V", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
     down_button.connect(SEL_COMMAND) do |sender,selector,data|
       i = @setting_step_list_view.currentItem
