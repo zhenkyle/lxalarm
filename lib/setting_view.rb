@@ -18,6 +18,7 @@ class SettingView < FXPacker
 
     alarm_name_text.connect(SEL_COMMAND) do |sender, selector, data|
       @alarm.name = sender.text
+      @alarm.dirty = true
 	end
 
     FXHorizontalSeparator.new(self, LAYOUT_FILL_X|SEPARATOR_GROOVE)
@@ -45,6 +46,7 @@ class SettingView < FXPacker
       i = @setting_step_list_view.currentItem
       @alarm[i].name = sender.text
       @setting_step_list_view.setItem(i,sender.text)
+      @alarm.dirty = true
     end
     
 
@@ -60,6 +62,7 @@ class SettingView < FXPacker
     @duration_text.connect(SEL_COMMAND) do |sender,selector,data|
       i = @setting_step_list_view.currentItem
       @alarm[i].duration = sender.text.to_i
+      @alarm.dirty = true
     end
     
     # Do with steps
@@ -74,13 +77,6 @@ class SettingView < FXPacker
   def add_terminating_buttons
     buttons = FXHorizontalFrame.new(self,
       :opts => LAYOUT_FILL_X|LAYOUT_SIDE_BOTTOM)
-    FXButton.new(buttons, "  OK  ",
-      :target => self, :selector => FXDialogBox::ID_ACCEPT,
-      :opts => BUTTON_NORMAL|LAYOUT_RIGHT)
-    FXButton.new(buttons, "Cancel",
-      :target => self, :selector => FXDialogBox::ID_CANCEL,
-      :opts => BUTTON_NORMAL|LAYOUT_RIGHT)
-
 
     add_button = FXButton.new(buttons, "+", :opts => BUTTON_NORMAL|LAYOUT_LEFT)
     add_button.connect(SEL_COMMAND) do |sender,selector,data|

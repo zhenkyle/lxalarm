@@ -4,10 +4,11 @@
 class Alarm
   include Enumerable
   
-  attr_accessor :name
+  attr_accessor :name, :dirty
 
   def initialize(name)
     @name = name
+    @dirty = false
     @steps = []
   end
   

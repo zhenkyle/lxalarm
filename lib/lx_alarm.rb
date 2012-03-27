@@ -39,8 +39,8 @@ class LXAlarm < FXMainWindow
    
     # Initialize private variables
     @alarm = nil
-    @dirty = false
     @counting_down = false
+    @filename = nil
 
     #for test
     #@alarm = YAML.load_file("cook_a_cake.alm")
@@ -68,14 +68,12 @@ class LXAlarm < FXMainWindow
 
     # File Menu -- Save
     save_cmd = FXMenuCommand.new(file_menu, "Save")
-    save_cmd.connect(SEL_COMMAND) do
-    end
+    save_cmd.connect(SEL_COMMAND, method(:on_cmd_file_save))
     save_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
 
     # File Menu -- Save As ...
     save_as_cmd = FXMenuCommand.new(file_menu, "Save As ...")
-    save_as_cmd.connect(SEL_COMMAND) do
-    end
+    save_as_cmd.connect(SEL_COMMAND, method(:on_cmd_file_save_as))
     save_as_cmd.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
 
     # File Menu -- Seperator
@@ -180,7 +178,6 @@ class LXAlarm < FXMainWindow
   def add_tool_bar
     tool_bar_shell = FXToolBarShell.new(self)
 
-
     top_dock_site = FXDockSite.new(self,
       :opts => LAYOUT_FILL_X|LAYOUT_SIDE_TOP)
     bottom_dock_site = FXDockSite.new(self,
@@ -214,22 +211,29 @@ class LXAlarm < FXMainWindow
       "\tNew\tCreate new alarm.",
       :icon => new_icon)
     new_button.connect(SEL_COMMAND, method(:on_cmd_file_new))
+    
     open_button = FXButton.new(tool_bar,
       "\tOpen ...\tOpen an alarm from file.",
       :icon => open_icon)
     open_button.connect(SEL_COMMAND, method(:on_cmd_file_open))
+    
     save_button = FXButton.new(tool_bar,
       "\tSave\tSave alarm.",
       :icon => save_icon)
     save_button.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
+    save_button.connect(SEL_COMMAND, method(:on_cmd_file_save))
+    
     save_as_button = FXButton.new(tool_bar,
       "\tSave As ...\tSave alarm to a new file.",
       :icon => save_as_icon)
     save_as_button.connect(SEL_UPDATE, method(:on_upd_alarm_dirty))
+    save_as_button.connect(SEL_COMMAND, method(:on_cmd_file_save_as))
+    
     close_button = FXButton.new(tool_bar,
       "\tClose\tClose opened Alarm.",
       :icon => close_icon)
     close_button.connect(SEL_UPDATE, method(:on_upd_alarm_open))
+    
     exit_button = FXButton.new(tool_bar,
       "\tExit\tExit the program.",
       :icon => exit_icon)
@@ -334,14 +338,33 @@ class LXAlarm < FXMainWindow
 
   # Menu / Button command events
   def on_cmd_file_new(sender,selector,data)
-    @dirty = true
+  	if @alarm != nil
+      if @alarm.dirty == true
+        answer = FXMessageBox.question(self, MBOX_YES_NO_CANCEL,
+          "LX's alarm",
+          "This file is unsaved.\n Do you want to save it?")
+        if answer == MBOX_CLICKED_CANCEL
+        	return
+    	elsif answer == MBOX_CLICKED_YES
+          on_cmd_file_save(sender,selector,data)
+        end
+        @tabbook.removeChild(@tabbook.childAtIndex(5))
+        @tabbook.removeChild(@tabbook.childAtIndex(4))
+        @tabbook.removeChild(@tabbook.childAtIndex(3))
+        @tabbook.removeChild(@tabbook.childAtIndex(2))
+        @filename = nil
+      end
+ 	end
+
     @alarm = Alarm.new("Untitled Alarm")
+    @alarm.dirty = true
     @alarm << Step.new("Step 1",60)
     alarm_view_tab = FXTabItem.new(@tabbook, "Alarm View")
     alarm_view_page = AlarmView.new(@tabbook,@alarm,FRAME_RAISED|LAYOUT_FILL)
     alarm_set_tab = FXTabItem.new(@tabbook, "Alarm Set")
     alarm_set_page = SettingView.new(@tabbook, @alarm, FRAME_RAISED|LAYOUT_FILL)
     @tabbook.create
+  	@tabbook.setCurrent(2)
   end
 
   def on_cmd_file_open(sender,selector,data)
@@ -353,14 +376,36 @@ class LXAlarm < FXMainWindow
     end
   end
 
+  def on_cmd_file_save(sender,selector,data)
+  	if @filename == nil
+  	  on_cmd_file_save_as(sender,selector,data)
+  	else
+  	  save_alarm_file(@filename)
+  	  @alarm.dirty = false
+  	end
+  end
+
+  def on_cmd_file_save_as(sender,selector,data)
+  	dialog = FXFileDialog.new(self,"Save as ")
+    dialog.patternList = ["Alarm Files (*.alm)"]
+    if dialog.execute != 0
+      @filename = dialog.filename
+      if File.extname(@filename) != ".alm"
+      	@filename += ".alm"
+  	  end
+      save_alarm_file(@filename)
+      @alarm.dirty = false
+    end
+  end
+  
   def on_cmd_file_exit(sender,selector,data)
-    store_alarm_file
+
     clean_up(self)
     exit
   end
   
   def on_cmd_edit_set_alarm(sender,selector,data)
-  	#TODO active setting view 
+  	@tabbook.setCurrent(2)
   end
   
   def on_cmd_control_start(sender,selector,data)
@@ -387,7 +432,7 @@ class LXAlarm < FXMainWindow
   end
 
   def on_upd_alarm_dirty(sender,selector,data)
-    sender.enabled = (!@alarm.nil?) && @dirty
+    sender.enabled = (!@alarm.nil?) && @alarm.dirty
   end
 
   def on_upd_alarm_running(sender,selector,data)
@@ -413,8 +458,11 @@ class LXAlarm < FXMainWindow
 #    @switcher.create
   end
   
-  def store_alarm_file
-    # TODO
+  def save_alarm_file(filepath)
+  	@alarm.dirty = false
+    File.open(filepath,"w") do |io|
+      io.write(YAML.dump(@alarm))
+    end
   end
 
   def clean_up(component)
